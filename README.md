@@ -15,7 +15,7 @@ npm install --save bgio-azure-storage
 ## Usage
 
 ```js
-const AzureStorage = require('bgio-azure-storage');
+const { AzureStorage } = require('bgio-azure-storage');
 const { BlobServiceClient } = require('@azure/storage-blob');
 const { Server } = require('boardgame.io/server');
 const { MyGame } = require('./game');

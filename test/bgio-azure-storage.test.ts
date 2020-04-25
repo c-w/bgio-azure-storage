@@ -1,6 +1,6 @@
 import { BlobServiceClient } from '@azure/storage-blob';
 import { State, Server, LogEntry } from 'boardgame.io';
-import AzureStorage from '../src/bgio-azure-storage';
+import { AzureStorage } from '../src/bgio-azure-storage';
 
 describe('AzureStorage', () => {
   let db: AzureStorage;

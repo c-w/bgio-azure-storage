@@ -123,7 +123,7 @@ const LOG = 'log/';
 const METADATA = 'metadata/';
 const STATE = 'state/';
 
-export default class AzureStorage extends Async {
+export class AzureStorage extends Async {
   private store: ClientAdapter;
 
   constructor(opts: AzureStorageOpts) {
