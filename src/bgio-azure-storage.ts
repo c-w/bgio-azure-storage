@@ -95,8 +95,13 @@ class BlobServiceClientAdapter implements KeyValueStore {
   }
 }
 
+export interface AzureStorageOpts {
+  client: BlobServiceClient;
+  container: string;
+}
+
 export class AzureStorage extends KeyValue {
-  constructor({ client, container }: { client: BlobServiceClient; container: string; }) {
+  constructor({ client, container }: AzureStorageOpts) {
     super(new BlobServiceClientAdapter(client, container), {});
   }
 }

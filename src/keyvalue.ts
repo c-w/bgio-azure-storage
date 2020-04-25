@@ -10,6 +10,18 @@ export interface KeyValueStore {
   keys(): Promise<string[]>;
 }
 
+function InitialStateKey(gameID: string) {
+  return `${gameID}:initial`;
+}
+
+function MetadataKey(gameID: string) {
+  return `${gameID}:metadata`;
+}
+
+function LogKey(gameID: string) {
+  return `${gameID}:log`;
+}
+
 export class KeyValue extends Async {
   private store: KeyValueStore;
   private storeInitArgs: object;
@@ -40,7 +52,7 @@ export class KeyValue extends Async {
     gameID: string,
     opts: O
   ): Promise<StorageAPI.FetchResult<O>> {
-    let result = {} as StorageAPI.FetchFields;
+    const result = {} as StorageAPI.FetchFields;
 
     if (opts.state) {
       result.state = (await this.store.getItem(gameID)) as State;
@@ -84,7 +96,7 @@ export class KeyValue extends Async {
   }
 
   async wipe(id: string) {
-    var keys = await this.store.keys();
+    const keys = await this.store.keys();
     if (!(keys.indexOf(id) > -1)) return;
     await this.store.removeItem(id);
     await this.store.removeItem(LogKey(id));
@@ -98,16 +110,4 @@ export class KeyValue extends Async {
       .filter(k => k.endsWith(suffix))
       .map(k => k.substring(0, k.length - suffix.length));
   }
-}
-
-function InitialStateKey(gameID: string) {
-  return `${gameID}:initial`;
-}
-
-function MetadataKey(gameID: string) {
-  return `${gameID}:metadata`;
-}
-
-function LogKey(gameID: string) {
-  return `${gameID}:log`;
 }

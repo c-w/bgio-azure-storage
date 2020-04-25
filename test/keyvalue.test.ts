@@ -51,7 +51,7 @@ for (const { name, db } of tests) {
       }
 
       // Must return all keys
-      let keys = await db.listGames();
+      const keys = await db.listGames();
       expect(keys).toEqual(['gameID']);
 
       // Must remove game from DB
@@ -66,7 +66,7 @@ for (const { name, db } of tests) {
       // Shall create game, then clear DB, then check whether DB is cleared
       await db.setState('game2', state as State);
       await db.clear();
-      let keys2 = await db.listGames();
+      const keys2 = await db.listGames();
       expect(keys2).toHaveLength(0);
     });
 
