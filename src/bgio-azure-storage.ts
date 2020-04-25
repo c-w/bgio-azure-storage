@@ -55,7 +55,7 @@ class BlobServiceClientAdapter implements KeyValueStore {
 
     return new Promise<any>((resolve, reject) => {
       const chunks: string[] = [];
-      stream.on('data', data => {
+      stream.on('data', (data) => {
         chunks.push(data.toString());
       });
       stream.on('end', () => {

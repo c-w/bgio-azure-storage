@@ -107,7 +107,7 @@ export class KeyValue extends Async {
     const keys = await this.store.keys();
     const suffix = ':metadata';
     return keys
-      .filter(k => k.endsWith(suffix))
-      .map(k => k.substring(0, k.length - suffix.length));
+      .filter((k) => k.endsWith(suffix))
+      .map((k) => k.substring(0, k.length - suffix.length));
   }
 }
