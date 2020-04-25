@@ -1,0 +1,47 @@
+{
+  "name": "bgio-azure-storage",
+  "version": "0.0.0",
+  "description": "Azure Storage database connector for boardgame.io",
+  "license": "MIT",
+  "author": "Clemens Wolff <clewolff@microsoft.com>",
+  "homepage": "https://github.com/c-w/bgio-azure-storage#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/c-w/bgio-azure-storage.git"
+  },
+  "bugs": {
+    "url": "https://github.com/c-w/bgio-azure-storage/issues"
+  },
+  "keywords": [
+    "azure-storage",
+    "boardgame.io"
+  ],
+  "scripts": {
+    "azurite:init": "mkdirp azurite",
+    "azurite:start": "pm2 startOrRestart ecosystem.config.yml",
+    "azurite:stop": "pm2 stop ecosystem.config.yml",
+    "azurite:clean": "rimraf azurite",
+    "pretest": "run-s azurite:init azurite:start",
+    "posttest": "run-s azurite:stop azurite:clean",
+    "test": "cross-env NODE_ENV=test jest"
+  },
+  "devDependencies": {
+    "@types/jest": "^25.2.1",
+    "azurite": "^3.7.0",
+    "boardgame.io": ">=0.39.4",
+    "cross-env": "^7.0.2",
+    "jest": "^25.3.0",
+    "mkdirp": "^1.0.4",
+    "npm-run-all": "^4.1.5",
+    "pm2": "^4.4.0",
+    "rimraf": "^3.0.2",
+    "ts-jest": "^25.3.1",
+    "typescript": "^3.8.3"
+  },
+  "dependencies": {
+    "@azure/storage-blob": "^12.1.1"
+  },
+  "peerDependencies": {
+    "boardgame.io": ">=0.39.4"
+  }
+}
