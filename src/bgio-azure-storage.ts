@@ -89,7 +89,7 @@ class ClientAdapter {
     }
   }
 
-  async keys(prefix: string | undefined = undefined) {
+  async keys(prefix: string) {
     const blobNames = [];
 
     const paginated = await this.container

@@ -22,3 +22,7 @@ jobs:
       - run: npm install
       - run: npm run lint
       - run: npm test
+      - name: Publish code coverage
+        uses: coverallsapp/github-action@v1.1.0
+        with:
+          github-token: ${{ secrets.github_token }}
