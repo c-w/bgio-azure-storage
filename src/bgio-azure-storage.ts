@@ -1,17 +1,16 @@
 import { BlobServiceClient } from '@azure/storage-blob';
-import { KeyValue, KeyValueStore } from './keyvalue';
+import { LogEntry, Server, State, StorageAPI } from 'boardgame.io';
+import { Async } from 'boardgame.io/internal';
 
-class BlobServiceClientAdapter implements KeyValueStore {
-  private client: BlobServiceClient;
-  private containerName: string;
+class ClientAdapter {
+  private opts: AzureStorageOpts;
 
-  constructor(client: BlobServiceClient, containerName: string) {
-    this.client = client;
-    this.containerName = containerName;
+  constructor(opts: AzureStorageOpts) {
+    this.opts = opts;
   }
 
   private get container() {
-    return this.client.getContainerClient(this.containerName);
+    return this.opts.client.getContainerClient(this.opts.container);
   }
 
   private blob(id: string) {
@@ -77,18 +76,28 @@ class BlobServiceClientAdapter implements KeyValueStore {
   }
 
   async clear() {
-    for (const id of await this.keys()) {
-      await this.removeItem(id);
+    const paginated = this.container
+      .listBlobsFlat()
+      .byPage({ maxPageSize: this.opts.maxConcurrentRequests });
+
+    for await (const page of paginated) {
+      await Promise.all(
+        page.segment.blobItems.map((blob) => this.removeItem(blob.name))
+      );
     }
   }
 
-  async keys() {
+  async keys(prefix: string | undefined = undefined) {
     const blobNames = [];
 
-    const blobs = await this.container.listBlobsFlat();
+    const paginated = await this.container
+      .listBlobsFlat({ prefix })
+      .byPage({ maxPageSize: this.opts.pageSize });
 
-    for await (const blob of blobs) {
-      blobNames.push(blob.name);
+    for await (const page of paginated) {
+      for (const blob of page.segment.blobItems) {
+        blobNames.push(blob.name);
+      }
     }
 
     return blobNames;
@@ -98,10 +107,108 @@ class BlobServiceClientAdapter implements KeyValueStore {
 export interface AzureStorageOpts {
   client: BlobServiceClient;
   container: string;
+  maxConcurrentRequests?: number;
+  pageSize?: number;
 }
 
-export class AzureStorage extends KeyValue {
-  constructor({ client, container }: AzureStorageOpts) {
-    super(new BlobServiceClientAdapter(client, container), {});
+const AzureStorageDefaults: Partial<AzureStorageOpts> = {
+  maxConcurrentRequests: 10,
+  pageSize: 50,
+};
+
+const INITIAL = 'initial/';
+const LOG = 'log/';
+const METADATA = 'metadata/';
+const STATE = 'state/';
+
+export default class AzureStorage extends Async {
+  private store: ClientAdapter;
+
+  constructor(opts: AzureStorageOpts) {
+    super();
+    this.store = new ClientAdapter({ ...AzureStorageDefaults, ...opts });
+  }
+
+  async connect() {
+    await this.store.init();
+  }
+
+  async createGame(gameID: string, opts: StorageAPI.CreateGameOpts) {
+    await Promise.all([
+      this.store.setItem(`${INITIAL}${gameID}`, opts.initialState),
+      this.setState(gameID, opts.initialState),
+      this.setMetadata(gameID, opts.metadata),
+    ]);
+  }
+
+  async fetch<O extends StorageAPI.FetchOpts>(gameID: string, opts: O) {
+    const result = {} as StorageAPI.FetchFields;
+
+    await Promise.all([
+      opts.state
+        ? this.store.getItem(`${STATE}${gameID}`).then((value) => {
+            result.state = value as State;
+          })
+        : Promise.resolve(),
+      opts.metadata
+        ? this.store.getItem(`${METADATA}${gameID}`).then((value) => {
+            result.metadata = value as Server.GameMetadata;
+          })
+        : Promise.resolve(),
+      opts.log
+        ? this.store.getItem(`${LOG}${gameID}`).then((value) => {
+            result.log = value as LogEntry[];
+          })
+        : Promise.resolve(),
+      opts.initialState
+        ? this.store.getItem(`${INITIAL}${gameID}`).then((value) => {
+            result.initialState = value as State;
+          })
+        : Promise.resolve(),
+    ]);
+
+    return result as StorageAPI.FetchResult<O>;
+  }
+
+  async clear() {
+    await this.store.clear();
+  }
+
+  async setState(id: string, state: State, deltalog?: LogEntry[]) {
+    await Promise.all([
+      this.setLog(id, deltalog),
+      this.store.setItem(`${STATE}${id}`, state),
+    ]);
+  }
+
+  async setMetadata(id: string, metadata: Server.GameMetadata) {
+    await this.store.setItem(`${METADATA}${id}`, metadata);
+  }
+
+  async wipe(id: string) {
+    await Promise.all([
+      this.store.removeItem(`${STATE}${id}`),
+      this.store.removeItem(`${INITIAL}${id}`),
+      this.store.removeItem(`${METADATA}${id}`),
+      this.store.removeItem(`${LOG}${id}`),
+    ]);
+  }
+
+  async listGames() {
+    const keys = await this.store.keys(INITIAL);
+    return keys.map((k) => k.substr(INITIAL.length));
+  }
+
+  private async setLog(id: string, deltalog?: LogEntry[]) {
+    if (!deltalog || !deltalog.length) {
+      return;
+    }
+
+    const key = `${LOG}${id}`;
+
+    const oldLog = (await this.store.getItem(key)) as LogEntry[];
+    const newLog = (oldLog || []).concat(deltalog);
+
+    await this.store.setItem(key, newLog);
   }
 }
