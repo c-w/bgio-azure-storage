@@ -28,6 +28,7 @@ class ClientAdapter {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async setItem(id: string, value: any) {
     const payload = JSON.stringify(value);
     await this.blob(id).upload(payload, payload.length);
@@ -52,6 +53,7 @@ class ClientAdapter {
       throw new Error(`Body for ${id} is null`);
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return new Promise<any>((resolve, reject) => {
       const chunks: string[] = [];
       stream.on('data', (data) => {

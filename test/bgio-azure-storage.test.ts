@@ -86,8 +86,8 @@ describe('AzureStorage', () => {
       phase: '',
     };
 
-    await db.setState('gameIDlog', null as any, [logEntry1]);
-    await db.setState('gameIDlog', null as any, [logEntry2]);
+    await db.setState('gameIDlog', null as any, [logEntry1]); // eslint-disable-line @typescript-eslint/no-explicit-any
+    await db.setState('gameIDlog', null as any, [logEntry2]); // eslint-disable-line @typescript-eslint/no-explicit-any
 
     const result = await db.fetch('gameIDlog', { log: true });
     expect(result.log).toEqual([logEntry1, logEntry2]);

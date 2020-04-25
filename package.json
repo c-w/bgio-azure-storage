@@ -23,7 +23,7 @@
     "azurite:clean": "rimraf azurite",
     "pretest": "run-s azurite:init azurite:start",
     "posttest": "run-s azurite:stop azurite:clean",
-    "lint": "eslint \"{src,test}/**/*.{ts,js}\"",
+    "lint": "eslint --max-warnings=0 \"{src,test}/**/*.{ts,js}\"",
     "test": "cross-env NODE_ENV=test jest"
   },
   "devDependencies": {
