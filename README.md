@@ -1,6 +1,7 @@
 # bgio-azure-storage
 
 [![NPM Version](https://img.shields.io/npm/v/bgio-azure-storage)](https://www.npmjs.com/package/bgio-azure-storage)
+[![CI Status](https://github.com/c-w/bgio-azure-storage/workflows/CI/badge.svg)](https://github.com/c-w/bgio-azure-storage/actions)
 
 > Azure Storage database connector for [boardgame.io](https://boardgame.io/)
 
