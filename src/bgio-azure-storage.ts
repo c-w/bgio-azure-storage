@@ -197,8 +197,8 @@ export class AzureStorage extends Async {
   }
 
   async listGames() {
-    const keys = await this.store.keys(INITIAL);
-    return keys.map((k) => k.substr(INITIAL.length));
+    const keys = await this.store.keys(METADATA);
+    return keys.map((k) => k.substr(METADATA.length));
   }
 
   private async setLog(id: string, deltalog?: LogEntry[]) {
