@@ -1,4 +1,4 @@
-import { BlobServiceClient } from '@azure/storage-blob';
+import { BlobServiceClient, Metadata } from '@azure/storage-blob';
 import { LogEntry, Server, State, StorageAPI } from 'boardgame.io';
 import { Async } from 'boardgame.io/internal';
 
@@ -29,9 +29,9 @@ class ClientAdapter {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async setItem(id: string, value: any) {
+  async setItem(id: string, value: any, metadata?: Metadata) {
     const payload = JSON.stringify(value);
-    await this.blob(id).upload(payload, payload.length);
+    await this.blob(id).upload(payload, payload.length, { metadata });
   }
 
   async getItem(id: string) {
@@ -89,20 +89,20 @@ class ClientAdapter {
     }
   }
 
-  async keys(prefix: string) {
-    const blobNames = [];
+  async blobs(prefix: string) {
+    const blobs = [];
 
     const paginated = await this.container
-      .listBlobsFlat({ prefix })
+      .listBlobsFlat({ prefix, includeMetadata: true })
       .byPage({ maxPageSize: this.opts.pageSize });
 
     for await (const page of paginated) {
       for (const blob of page.segment.blobItems) {
-        blobNames.push(blob.name);
+        blobs.push(blob);
       }
     }
 
-    return blobNames;
+    return blobs;
   }
 }
 
@@ -122,6 +122,9 @@ const INITIAL = 'initial/';
 const LOG = 'log/';
 const METADATA = 'metadata/';
 const STATE = 'state/';
+const METADATA_IS_GAMEOVER = 'isgameover';
+const METADATA_GAME_NAME = 'gamename';
+const METADATA_UPDATED_AT = 'updatedat';
 
 export class AzureStorage extends Async {
   private store: ClientAdapter;
@@ -184,7 +187,21 @@ export class AzureStorage extends Async {
   }
 
   async setMetadata(matchID: string, metadata: Server.MatchData) {
-    await this.store.setItem(`${METADATA}${matchID}`, metadata);
+    const blobMetadata: Metadata = {};
+
+    if (metadata.gameName) {
+      blobMetadata[METADATA_GAME_NAME] = metadata.gameName;
+    }
+
+    if (metadata.updatedAt) {
+      blobMetadata[METADATA_UPDATED_AT] = metadata.updatedAt.toString();
+    }
+
+    if (metadata.gameover != null) {
+      blobMetadata[METADATA_IS_GAMEOVER] = metadata.gameName ? 'true' : 'false';
+    }
+
+    await this.store.setItem(`${METADATA}${matchID}`, metadata, blobMetadata);
   }
 
   async wipe(matchID: string) {
@@ -197,8 +214,46 @@ export class AzureStorage extends Async {
   }
 
   async listGames(opts?: StorageAPI.ListGamesOpts) {
-    const keys = await this.store.keys(METADATA);
-    return keys.map((k) => k.substr(METADATA.length));
+    const blobs = await this.store.blobs(METADATA);
+
+    return blobs
+      .filter((blob) => {
+        if (!blob.metadata) {
+          return true;
+        }
+
+        const gameName = blob.metadata[METADATA_GAME_NAME];
+        const updatedAt = Number(blob.metadata[METADATA_UPDATED_AT]);
+        const isGameOver = blob.metadata[METADATA_IS_GAMEOVER] === 'true';
+
+        if (opts?.gameName != null && gameName !== opts.gameName) {
+          return false;
+        }
+
+        if (
+          opts?.where?.updatedAfter != null &&
+          updatedAt <= opts.where.updatedAfter
+        ) {
+          return false;
+        }
+
+        if (
+          opts?.where?.updatedBefore != null &&
+          updatedAt >= opts.where.updatedBefore
+        ) {
+          return false;
+        }
+
+        if (
+          opts?.where?.isGameover != null &&
+          isGameOver !== opts.where.isGameover
+        ) {
+          return false;
+        }
+
+        return true;
+      })
+      .map((blob) => blob.name.substr(METADATA.length));
   }
 
   private async setLog(id: string, deltalog?: LogEntry[]) {
