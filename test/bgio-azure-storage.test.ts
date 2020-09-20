@@ -30,7 +30,7 @@ describe('AzureStorage', () => {
 
     await db.createGame('gameID', {
       initialState: state as State,
-      metadata: metadata as Server.GameMetadata,
+      metadata: metadata as Server.MatchData,
     });
 
     // Must return created game.

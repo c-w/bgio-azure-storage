@@ -143,27 +143,27 @@ export class AzureStorage extends Async {
     ]);
   }
 
-  async fetch<O extends StorageAPI.FetchOpts>(gameID: string, opts: O) {
+  async fetch<O extends StorageAPI.FetchOpts>(matchID: string, opts: O) {
     const result = {} as StorageAPI.FetchFields;
 
     await Promise.all([
       opts.state
-        ? this.store.getItem(`${STATE}${gameID}`).then((value) => {
+        ? this.store.getItem(`${STATE}${matchID}`).then((value) => {
             result.state = value as State;
           })
         : Promise.resolve(),
       opts.metadata
-        ? this.store.getItem(`${METADATA}${gameID}`).then((value) => {
-            result.metadata = value as Server.GameMetadata;
+        ? this.store.getItem(`${METADATA}${matchID}`).then((value) => {
+            result.metadata = value as Server.MatchData;
           })
         : Promise.resolve(),
       opts.log
-        ? this.store.getItem(`${LOG}${gameID}`).then((value) => {
+        ? this.store.getItem(`${LOG}${matchID}`).then((value) => {
             result.log = value as LogEntry[];
           })
         : Promise.resolve(),
       opts.initialState
-        ? this.store.getItem(`${INITIAL}${gameID}`).then((value) => {
+        ? this.store.getItem(`${INITIAL}${matchID}`).then((value) => {
             result.initialState = value as State;
           })
         : Promise.resolve(),
@@ -176,27 +176,27 @@ export class AzureStorage extends Async {
     await this.store.clear();
   }
 
-  async setState(id: string, state: State, deltalog?: LogEntry[]) {
+  async setState(matchID: string, state: State, deltalog?: LogEntry[]) {
     await Promise.all([
-      this.setLog(id, deltalog),
-      this.store.setItem(`${STATE}${id}`, state),
+      this.setLog(matchID, deltalog),
+      this.store.setItem(`${STATE}${matchID}`, state),
     ]);
   }
 
-  async setMetadata(id: string, metadata: Server.GameMetadata) {
-    await this.store.setItem(`${METADATA}${id}`, metadata);
+  async setMetadata(matchID: string, metadata: Server.MatchData) {
+    await this.store.setItem(`${METADATA}${matchID}`, metadata);
   }
 
-  async wipe(id: string) {
+  async wipe(matchID: string) {
     await Promise.all([
-      this.store.removeItem(`${STATE}${id}`),
-      this.store.removeItem(`${INITIAL}${id}`),
-      this.store.removeItem(`${METADATA}${id}`),
-      this.store.removeItem(`${LOG}${id}`),
+      this.store.removeItem(`${STATE}${matchID}`),
+      this.store.removeItem(`${INITIAL}${matchID}`),
+      this.store.removeItem(`${METADATA}${matchID}`),
+      this.store.removeItem(`${LOG}${matchID}`),
     ]);
   }
 
-  async listGames() {
+  async listGames(opts?: StorageAPI.ListGamesOpts) {
     const keys = await this.store.keys(METADATA);
     return keys.map((k) => k.substr(METADATA.length));
   }
