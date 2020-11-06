@@ -1,8 +1,17 @@
 import { BlobServiceClient } from '@azure/storage-blob';
 import { State, Server, LogEntry } from 'boardgame.io';
-import { AzureStorage } from '../src/bgio-azure-storage';
+import {
+  AzureStorage,
+  AzureStorageOpts,
+  Compression,
+} from '../src/bgio-azure-storage';
 
-describe('AzureStorage', () => {
+const configs: Partial<AzureStorageOpts>[] = [
+  {},
+  { compression: Compression.gzip },
+];
+
+describe.each(configs)('AzureStorage(%j)', (opts) => {
   let db: AzureStorage;
 
   beforeAll(async () => {
@@ -11,6 +20,7 @@ describe('AzureStorage', () => {
         'UseDevelopmentStorage=true'
       ),
       container: 'test',
+      ...opts,
     });
     await db.connect();
   });

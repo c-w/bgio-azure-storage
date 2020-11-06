@@ -1,6 +1,14 @@
 import { BlobServiceClient, Metadata } from '@azure/storage-blob';
 import { LogEntry, Server, State, StorageAPI } from 'boardgame.io';
 import { Async } from 'boardgame.io/internal';
+import { promisify } from 'util';
+import { createGunzip, gzip as gzipCallback } from 'zlib';
+
+const gzip: (value: string) => Promise<Buffer> = promisify(gzipCallback);
+
+export enum Compression {
+  gzip = 'gzip',
+}
 
 class ClientAdapter {
   private opts: AzureStorageOpts;
@@ -30,7 +38,17 @@ class ClientAdapter {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async setItem(id: string, value: any, metadata?: Metadata) {
-    const payload = JSON.stringify(value);
+    const serialized = JSON.stringify(value);
+
+    const payload =
+      this.opts.compression === Compression.gzip
+        ? await gzip(serialized)
+        : Buffer.from(serialized, 'utf-8');
+
+    if (this.opts.compression) {
+      metadata = { ...metadata, compression: this.opts.compression };
+    }
+
     await this.blob(id).upload(payload, payload.length, { metadata });
   }
 
@@ -46,12 +64,17 @@ class ClientAdapter {
       return undefined;
     }
 
-    const stream = blob.readableStreamBody;
+    const blobStream = blob.readableStreamBody;
 
     /* istanbul ignore next */
-    if (stream == null) {
+    if (blobStream == null) {
       throw new Error(`Body for ${id} is null`);
     }
+
+    const stream =
+      blob.metadata?.compression === Compression.gzip
+        ? blobStream.pipe(createGunzip())
+        : blobStream;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return new Promise<any>((resolve, reject) => {
@@ -92,7 +115,7 @@ class ClientAdapter {
   async blobs(prefix: string) {
     const blobs = [];
 
-    const paginated = await this.container
+    const paginated = this.container
       .listBlobsFlat({ prefix, includeMetadata: true })
       .byPage({ maxPageSize: this.opts.pageSize });
 
@@ -111,6 +134,7 @@ export interface AzureStorageOpts {
   container: string;
   maxConcurrentRequests?: number;
   pageSize?: number;
+  compression?: Compression;
 }
 
 const AzureStorageDefaults: Partial<AzureStorageOpts> = {
