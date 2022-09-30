@@ -1,5 +1,8 @@
 module.exports = {
   parser: '@typescript-eslint/parser',
+  plugins: [
+    '@typescript-eslint',
+  ],
   parserOptions: {
     project: './**/tsconfig.json',
   },
@@ -8,7 +11,6 @@ module.exports = {
     'plugin:@typescript-eslint/recommended',
     'plugin:jest/recommended',
     'plugin:prettier/recommended',
-    'prettier/@typescript-eslint',
   ],
   env: {
     node: true,
@@ -16,5 +18,6 @@ module.exports = {
   },
   rules: {
     '@typescript-eslint/explicit-function-return-type': 'off',
+    '@typescript-eslint/explicit-module-boundary-types': 'off',
   },
 };
