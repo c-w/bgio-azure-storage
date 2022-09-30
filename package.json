@@ -1,6 +1,6 @@
 {
   "name": "bgio-azure-storage",
-  "version": "0.2.0",
+  "version": "0.49.0",
   "description": "Azure Storage database connector for boardgame.io",
   "license": "MIT",
   "author": "Clemens Wolff <clewolff@microsoft.com>",

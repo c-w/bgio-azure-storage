@@ -14,6 +14,10 @@ This package provides a database connector that allows you to use an [Azure Stor
 npm install --save bgio-azure-storage
 ```
 
+## Versioning
+
+The major and minor versions of this package follow the major and minor versions of the upstream [boardgame.io package](https://www.npmjs.com/package/boardgame.io).
+
 ## Usage
 
 ```js
