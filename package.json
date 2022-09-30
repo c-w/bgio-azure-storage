@@ -58,6 +58,10 @@
     "typescript": "^3.8.3",
     "version-bump-prompt": "^6.0.3"
   },
+  "overrides": {
+    "@types/express-serve-static-core": "4.17.30",
+    "@types/qs": "6.9.6"
+  },
   "dependencies": {
     "@azure/storage-blob": "^12.1.1"
   },
